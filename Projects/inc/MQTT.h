@@ -1,0 +1,166 @@
+#ifndef __MQTT_H
+#define	__MQTT_H
+
+#include "gd32e50x.h"
+
+//#define D_MAX_BUF_SIZE	1024
+extern volatile unsigned short g_tristart_mppt_Setup_Register_Addr[5][2];
+
+extern  volatile unsigned short g_Inverter_Setup_Register_Addr[3][2];
+
+extern  volatile unsigned short g_Air_Setup_Register_Addr[6][2];
+
+enum{
+	E_AC_MODBUS_ID        = 0x01,//空调-
+	E_INVERTER_MODBUS_ID	= 0x02,//逆变器-
+	E_FAN_MODBUS_ID       = 0x03,//风机
+	E_DEG_MODBUS_ID       = 0x0A,//柴油发电机Diesel Engine Generator-
+	E_MPPT_MODBUS_ID      = 0x41,//MPPT-
+	//整流器-
+	//电池-
+	//系统控制器-
+};
+
+enum{
+	E_MODBUS_CMD_03				= 0x03,
+	E_MODBUS_CMD_04				= 0x04,
+	E_MODBUS_CMD_05				= 0x05,
+	E_MODBUS_CMD_06				= 0x06,
+	E_MODBUS_CMD_10				= 0x10,
+	E_MODBUS_CMD_2B				= 0x2B,
+};
+
+enum{
+	E_REV_MODE_INVERTER_RAM_0x0000_0x005F 		= 1,
+	E_REV_MODE_INVERTER_EEPROM_0xE003_0xE005	= 2,
+	E_REV_MODE_INVERTER_DEVICE_INFO           = 3,
+};
+
+enum{
+	E_DATA_LENGTH_1_BYTE	= 1,
+	E_DATA_LENGTH_2_BYTE	= 2,
+	E_DATA_LENGTH_3_BYTE	= 3,
+	E_DATA_LENGTH_4_BYTE	= 4,
+};
+
+enum{
+	E_DATA_TYPE_BYTE   = 1,//无符号单字节整型（字节， 8 位） 、 双字节整型（字， 16位） 、 四字节整型（字， 32 位） 、 BYTE[n]、 n 字节
+	E_DATA_TYPE_DI     = 2,//用于表示状态量 Di
+	E_DATA_TYPE_BCD    = 3,//8421 码
+	E_DATA_TYPE_STRING = 4,//字符串
+	E_DATA_TYPE_JSON   = 5,//Json 格式字符串， 按标记格式
+	E_DATA_TYPE_FLOAT  = 6,//单精度浮点型 
+	E_DATA_TYPE_DOUBLE = 7,//双精度浮点型
+};
+
+enum{
+  E_MQTT_CONNECT	 	=1,			//客户端请求连接服务端
+	E_MQTT_CONNACK 		=2,			//连接报文确认
+	E_MQTT_PUBLISH 		=3,			//发布消息
+	E_MQTT_PUBACK 		=4,			//QoS1消息发布到确认
+	E_MQTT_PUBREC 		=5,			//发布收到(保证交付第一步)
+	E_MQTT_PUBREL			=6,			//发布释放(保证交付第二步)
+	E_MQTT_PUBCOMP 		=7,			//QoS2消息发布完成(保证交付第三步)
+	E_MQTT_SUBSCRIBE 	=8,			//客户端订阅请求
+	E_MQTT_SUBACK 		=9,			//订阅请求报文确认
+	E_MQTT_UNSUBSCRIBE=10,		//客户端取消订阅请求
+	E_MQTT_UNSUBACK   =11,		//取消订阅报文确认
+	E_MQTT_PINGREQ 		=12,		//心跳请求
+	E_MQTT_PINGRESP 	=13,		//心跳响应
+	E_MQTT_DISCONNECT =14,		//客户端断开连接
+};
+
+enum{
+	E_CONNECT_PPROTOCAL_LEVEL_0					=0,	//协议级别0
+	E_CONNECT_PPROTOCAL_LEVEL_1					=1,	//协议级别1
+	E_CONNECT_PPROTOCAL_LEVEL_2					=2,	//协议级别2
+	E_CONNECT_PPROTOCAL_LEVEL_3					=3,	//协议级别3
+	E_CONNECT_PPROTOCAL_LEVEL_4					=0,	//协议级别4
+	
+	E_CONNECT_FLAG_USER_NAME_BIT7_0			=0, //连接标志位用户名
+	E_CONNECT_FLAG_USER_NAME_BIT7_1			=1, //连接标志位用户名
+	
+	E_CONNECT_FLAG_PASSWORD_BIT6_0			=0, //连接标志位密码
+	E_CONNECT_FLAG_PASSWORD_BIT6_1			=1, //连接标志位密码
+	
+	E_CONNECT_FLAG_WILL_RETAIN_BIT5_0		=0, //连接标志位遗嘱保留
+	E_CONNECT_FLAG_WILL_RETAIN_BIT5_1		=1, //连接标志位遗嘱保留
+	
+	E_CONNECT_FLAG_WILL_QoS_BIT4_AND_3_0=0, //连接标志位遗嘱服务质量
+	E_CONNECT_FLAG_WILL_QoS_BIT4_AND_3_1=1, //连接标志位遗嘱服务质量
+	E_CONNECT_FLAG_WILL_QoS_BIT4_AND_3_2=2, //连接标志位遗嘱服务质量
+	
+	E_CONNECT_FLAG_WILL_FLAG_BIT2_0			=0, //连接标志位遗嘱标志
+	E_CONNECT_FLAG_WILL_FLAG_BIT2_1			=1, //连接标志位遗嘱标志
+	
+	E_CONNECT_FLAG_CLEAN_SESSION_BIT1_0	=0,	//连接标志位清理会话
+	E_CONNECT_FLAG_CLEAN_SESSION_BIT1_1	=1,	//连接标志位清理会话
+	
+	E_CONNECT_KEEP_ALIVE_60=60,		 			    //保持连接时间(心跳周期)
+};
+
+enum{
+	E_PUBLISH_FH_DUP0		=0,
+	E_PUBLISH_FH_DUP1		=1,
+	
+	E_PUBLISH_FH_QoS0		=0,
+	E_PUBLISH_FH_QoS1		=1,
+	E_PUBLISH_FH_QoS2		=2,
+	
+	E_PUBLISH_FH_RETAIN0	=0,
+	E_PUBLISH_FH_RETAIN1	=1,
+	
+	E_PUBLISH_PL_MESSAGE_BODY_PROPERTIES_DATA_ENCRYPTION_0 =0,
+	E_PUBLISH_PL_MESSAGE_BODY_PROPERTIES_DATA_ENCRYPTION_1 =1,
+	E_PUBLISH_PL_MESSAGE_BODY_PROPERTIES_DATA_COMPRESS_0   =0,
+	E_PUBLISH_PL_MESSAGE_BODY_PROPERTIES_DATA_COMPRESS_1   =1,
+	
+	
+	E_PUBLISH_TYPE_MARK_H4BIT_DATA_ONLY_RD		=0,
+	E_PUBLISH_TYPE_MARK_H4BIT_DATA_RD_AND_WR  =1,
+	E_PUBLISH_TYPE_MARK_H4BIT_DATA_ONLY_WR  	=2,
+	
+	E_PUBLISH_TYPE_MARK_L4BIT_HEX_DATA        =0,
+	E_PUBLISH_TYPE_MARK_L4BIT_ASCII_DATA      =1,
+	E_PUBLISH_TYPE_MARK_L4BIT_UTF_DATA        =2,
+	
+	E_PUBLISH_DATA_QUALITY_INIT_DATA         	=0,//初始化数据
+	E_PUBLISH_DATA_QUALITY_NORMAL_DATA        =1,//正常数据
+	E_PUBLISH_DATA_QUALITY_BAD_DATA         	=2,//不良数据
+	E_PUBLISH_DATA_QUALITY_COM_FAULT         	=3,//通讯故障
+};
+
+#define D_W25QXX_FLASH_MQTT_UPLOAD_DEVICE_TOTAL_ADDR    0x0010000 
+#define D_W25QXX_FLASH_MQTT_UPLOAD_DEVICE_ID_ADDR       0x0011000
+
+#define D_W25QXX_FLASH_MQTT_UPLOAD_TIME_INTERVAL_ADDR   0x0012000
+#define D_W25QXX_FLASH_MQTT_PINGREQ_TIME_INTERVAL_ADDR  0x0013000
+
+//void Mqtt_Upload_Device_Total_SaveToW25QXX(void);
+void Mqtt_Upload_Device_Total_ReadFromW25QXX(void);
+
+//void Mqtt_Upload_Device_ID_SaveToW25QXX(void);
+void Mqtt_Upload_Device_ID_ReadFromW25QXX(void);
+
+//void Mqtt_Upload_Time_Interval_SaveToW25QXX(void);
+//void Mqtt_Upload_Time_Interval_ReadFromW25QXX(void);
+
+//void Mqtt_PINGREQ_Time_Interval_SaveToW25QXX(void);
+void Mqtt_PINGREQ_Time_Interval_ReadFromW25QXX(void);
+
+unsigned char BCD_To_Dec(unsigned char Para_ucTemp);
+void DlymS(unsigned int uitd);
+void DlyS(unsigned int uitd);
+void StringToHex(char *str, unsigned char *strhex);
+unsigned char MQTT_CRC(unsigned char *pData,int nLen);
+//void Float_to_Byte4(float f,unsigned char *byte);
+//float Byte4_to_Float(unsigned char *p);
+unsigned int float_to_int(float f);
+float int_to_float(unsigned int Para_uiData);
+unsigned char MQTT_Remain_Length_Encode(unsigned char *Para_ucBuf,unsigned int Para_uiLength);
+unsigned int MQTT_Remain_Length_Decode(unsigned char *Para_ucBuf);
+
+
+void MQTT_Run(unsigned char work_mode);
+unsigned char MQTT_Send(unsigned char*data,int len);
+#endif

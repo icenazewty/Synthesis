@@ -1,0 +1,91 @@
+/******************** (C) COPYRIGHT 2007 STMicroelectronics ********************
+* File Name          : spi_flash.h
+* Author             : MCD Application Team
+* Date First Issued  : 02/05/2007
+* Description        : Header for spi_flash.c file.
+********************************************************************************
+* History:
+* 05/21/2007: V0.3
+* 04/02/2007: V0.2
+* 02/05/2007: V0.1
+********************************************************************************
+* THE PRESENT SOFTWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
+* WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE TIME.
+* AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY DIRECT,
+* INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING FROM THE
+* CONTENT OF SUCH SOFTWARE AND/OR THE USE MADE BY CUSTOMERS OF THE CODING
+* INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+*******************************************************************************/
+
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __COMM_PROCESS_H
+#define __COMM_PROCESS_H
+
+/* Includes ------------------------------------------------------------------*/
+#include "gd32e50x.h"
+
+#define D_REV_MODE_RECTIFIER_RC_DISTRIBUTION_GET_ANALOG_DATA_100			          100 //整流器整流配电获取模拟量量化数据,RC:RECTIFICATION
+#define D_REV_MODE_RECTIFIER_RC_DISTRIBUTION_GET_SYSTEM_SWITCH_INPUT_STATE_101	101
+#define D_REV_MODE_RECTIFIER_RC_DISTRIBUTION_GET_ALARM_STATE_102 		          	102 //整流器整流配电获取告警状态
+
+#define D_REV_MODE_RECTIFIER_AC_DISTRIBUTION_GET_ANALOG_DATA_103	          		103 //整流器交流配电获取模拟量量化数据
+#define D_REV_MODE_RECTIFIER_AC_DISTRIBUTION_GET_SYSTME_SWITCH_INPUT_STATE_104	104 //整流器交流配电获取系统开关输入状态
+#define D_REV_MODE_RECTIFIER_AC_DISTRIBUTION_GET_ALARM_STATE_105	              105 //整流器交流配电获取告警状态
+#define D_REV_MODE_RECTIFIER_AC_DISTRIBUTION_GET_CUSTOM_PARA1_109               109 //整流器交流配电获取自定义参数
+
+#define D_REV_MODE_RECTIFIER_DC_DISTRIBUTION_GET_ANALOG_DATA_106	          		106 //整流器直流配电获取模拟量量化数据
+#define D_REV_MODE_RECTIFIER_DC_DISTRIBUTION_GET_ALARM_STATE_107	              107 //整流器直流配电获取告警状态
+#define D_REV_MODE_RECTIFIER_DC_DISTRIBUTION_GET_PARA_108                       108 //整流器直流配电获取参数(浮点数)
+
+#define D_PYLON_BAT_SETS_1	0 //电池组1
+#define D_PYLON_BAT_SETS_2  1 //电池组2
+#define D_REV_MODE_PYLON_BAT_GET_ANALOG_DATA_130                                130 //派能电池获取模拟量数据(定点数)
+#define D_REV_MODE_PYLON_BAT_GET_Alarm_INFO_131                                 131 //派能电池获取告警信息
+#define D_REV_MODE_PYLON_BAT_GET_SN_132                                         132 //派能电池获取序列号
+#define D_REV_MODE_PYLON_BAT_GET_SYSTEM_BASIC_INFO_133                          133 //派能电池获取系统基本信息
+#define D_REV_MODE_PYLON_BAT_GET_BAT_CHARGE_DISCHARGE_MI_134                    134 //派能电池获取电池充放电管理信息 MI:management information
+#define D_REV_MODE_PYLON_BAT_GET_SYSTEM_PARA_135                                135 //派能电池获取系统参数，注意：只获取主机保护参数
+#define D_REV_MODE_PYLON_BAT_GET_SYSTEM_ANALOG_136                              136 //派能电池       4.2 系统模拟量/Analog data of system 
+#define D_REV_MODE_PYLON_BAT_GET_SYSTEM_ALARM_137                              	137 //派能电池       4.3 系统告警保护/alarm & protection info of system
+
+#define D_REV_MODE_DBS_AIR_STATE_1																							80	//空调状态位读取
+#define D_REV_MODE_DBS_AIR_ALARM_2																							81	//空调报警位读取
+#define D_REV_MODE_DBS_AIR_SENSOR_4																							82	//空调传感器读取
+#define D_REV_MODE_DBS_AIR_PARAMETER_3																					83	//空调参数读取
+ 
+//-------------------- 逆变器 -------------------------------------------------------------------------------------
+#define D_REV_MODE_INVERTER_RAM_AREA_20                                         20
+#define D_REV_MODE_INVERTER_EEPROM_AREA_21																			21
+//---------------------瑞典电池------------------------------------------------------------------------------------
+#define BAT_SLB48_REV_MODE_22   																								22
+#define BAT_SLB48_REV_MODE_23   																								23
+#define BAT_SLB48_REV_MODE_24   																								24
+//-------------------- 风机   -------------------------------------------------------------------------------------
+#define D_REV_MODE_FAN_RAM_AREA_30                                              30
+//-------------------- 柴油发电机   -------------------------------------------------------------------------------
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_1024_1089_40									40
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_1536_1581_41									41
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_1798_1809_42									42
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_39425_39442_43								43
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_43873_44											44
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_43520_43535_45								45
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_43925_43949_46								46
+#define D_REV_MODE_DIESEL_GENERATOR_REGISTER_ADDR_48640_48661_47								47
+
+void 	RTU_Process(void);
+void 	Com2Com(unsigned char Source_Ch ,unsigned char Dest_Ch);
+void 	Clear_Uart_Buffer(void);
+void 	Com1_Boot(void);
+void  Get_Mppt_Data();					//获取mppt数据
+unsigned char get_sw_timeout(unsigned char ch,unsigned char mode);
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void get_all_device_info(void);
+void deal_rev_data(unsigned char* Arr_rece,unsigned int Data_len,unsigned char mode,unsigned char modbus_id,unsigned char cid2);
+void get_pvt_para(void);
+void set_pvt_para(unsigned short reg,unsigned short data);
+void uart_get_data(unsigned char modbus_id,unsigned short int addr, unsigned short int num,unsigned char cmd,unsigned char com);
+void uart_set_data_modbus6_com(unsigned char modbus_id, unsigned short int addr, unsigned short int dat,unsigned char com);
+void uart_set_data_modbus16(unsigned char modbusid,unsigned short int addr , unsigned char num, unsigned short int *dat, unsigned char com);
+#endif /* __SPI_FLASH_H */
+
+/******************* (C) COPYRIGHT 2007 STMicroelectronics *****END OF FILE****/

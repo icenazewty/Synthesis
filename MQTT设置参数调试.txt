@@ -1,0 +1,198 @@
+MQQT  控制报文由三部分组成
+Fixed header		Fh
+Variable header		Vh
+Payload			Pl
+
+1.  协议读写整理并弄清楚						OK
+2.  设备编号，上传时间间隔，服务器ip + port，通讯方式都可以修改。	OK
+3.  数据绑定测试。 重点						ayq  进行核对
+4.  修改心跳间隔，可以设置APN，增加APN拨号步骤。	wjj  优先处理
+5. 更换电池通讯协议。				wjj    下一步处理
+
+
+需要解决的问题:
+1.  通过服务器进行时间同步，实现UTC。	yzq
+2.  yzq实现远程控制。			yzq
+3. 增加部分sysctrol部分实时数据		yzq
+4. 修改名称，做到见名知意			ayq
+--------------------------------------------------------------------
+
+5.  核对通讯数据。 优先
+种类核对: 
+1. SysController  	增加1个日志  增加一个参数远程设置	OK
+2. Mppt			核对mppt
+g_configRead.alarmDelyMinute;   模块数量可以设置。并且可以变化传输。
+
+3. Rectifier
+4. Battery		
+5. Generator
+6. AirConditioner
+7. Fan
+8. Inverter
+
+
+示例数据（例如：13 个 di 量，13 个 do，2 个模拟量，四个参数，di,do,ai,ao）：
+3257
+00113032324546304336423536312F313030370000170614142500000000051007000001000
+10002001E000000010200010002071E00000002021001000213F8000000030100010002024B0000
+0004011001000203E73A
+分解：
+32
+57—剩余长度
+0011 —主题长度
+3032324546304336423536312F31303037 —主题 022EF0C6B561/1007   022EF0C6B561/1007
+0000—报文标识符,，可以固定为 0000，不自动累加
+170614142500 —时间23-06-20  20:37:00
+0000 —属性
+0005 — 参数项总数
+100700000100010002001E —请求，时间间隔 30 秒	0x001E=30
+000000010200010002071E —di，只读，其中 071E 代表 16 个值，1 字节 0 位为第 1 个值，次序为
+87654321，第 2 个字节次序为 16-9 依次排列，共 2 个字节 16 位。数据以至少一个字 16 位，如
+不被 16 整除则最后一个字节的高位补 0。如 13 位，高位 3 补 0，具体格式为：8 7 6 5 4 3 2 1
+X X X 13 12 11 10 9。多于 2 个字节以此类推。
+00000002021001000213F8 —do，读写，13 个值，1 字节 0 位为第 1 个值，2 个字节 16 位，高位
+3 补 0。
+000000030100010002024B —ai，只读，模拟量 587，两个字节，高字节在前，大端排序。
+00000004011001000203E7 —ao，只读，模拟量 999，两个字节，高字节在前，大端排序。
+3A —校验码
+另外，对于类型为 float 的控制，类型为 06，如：将地址参数 4 设置为-0.57
+00000004 061001 0004 BF11EB85
+应答示例数据：4002000
+
+	 unsigned char	load1_ctrl;			//负载1控制    ka1  do0  do1
+	 unsigned char	load2_ctrl;			//负载2控制    ka2  do2  do3
+	 unsigned char  fan_ctrl;			//风扇控制		 ka3  do4
+	 unsigned char  reserve_motor_ctrl;		//后备电机控制 ka4  do5
+	 float		batt_v;				//电池电压
+	 float		lem4_batt;			//电池电流in4	-->in6 
+	 float    	batt_p;				//电池功率
+	 float    	lem1_load1;			//负载1电流in2 
+	 float    	lem2_load2;			//负载2电流in1 
+	 float    	load_i;				//负载电流
+	 float    	load_p;				//负载功率
+	 float		pv_v;				//光伏电压	
+	 float		pv_p;				//光伏功率
+	 float		ir;				//太阳能光照强度 in0	
+	 float		temp[2];			//2个温度,箱子内部温度和外部环境温度     in5(内部温度)X     in7(环境温度)OK
+	 float		mppt_temp;			//mppt温度		
+	 unsigned char  batt_status;			//电池状态 电池空气开关是否都合闸 	 DI0    led亮为正常
+	 unsigned char  load_status;			//负载状态 负载1 2空气开关是否都合闸 DI1		led亮为正常	 
+	 unsigned char  doormagnetic_status;		//门磁状态 													 DI2		led亮为正常	 
+	 unsigned char  battlose_status;		//电池防盗状态  										 DI3		led亮为正常
+	 unsigned char  pvlose_status;			//pv防盗状态          							 DI4		led亮为正常	 	 
+	 unsigned char  load34_status;			//负载状态 负载3 4空气开关是否都合闸 DI5		led亮为正常	 
+	 //-----------------------------------------------以下为增加部分2023.7.17---------------------------------------
+	 unsigned char	load3_ctrl;			//负载3控制    ka1  do4  do5
+	 unsigned char	load4_ctrl;			//负载4控制    ka2  do6  do7
+	 unsigned char  smog_alarm;			//烟雾报警 	 	 DI6       led亮为报警
+	 unsigned char  waterout_alarm;			//水浸报警     DI7       led亮为报警
+	 unsigned char  resever[2];			//4字节对齐			
+	 float    	lem_load3;			//负载3电流in3
+	 float    	lem_load4;			//负载4电流in4
+	 signed   short int  main_carbin_T;		//温度
+	 unsigned short int  main_carbin_H;		//湿度
+	 signed   short int  second_carbin_T;		//温度
+	 unsigned short int  second_carbin_H;		//湿度
+	 float		pv_i;				//光伏电流
+	 float		mppt_i;				//mppt总电流
+	 float		mppt_p;				//mppt总功率
+	 //++++++++++++++++2023.9.13增加+++++++++++++++++++++++++++++++++++++++++++++
+	 float fVoltage_AC;				//逆变器交流电压               0x000A
+	 float fCurrent_AC;				//逆变器交流电流               0x000B	 
+	 float fV_RC_Distribution_Output;		//dc输出电压  整流器
+	 float fI_RC_Distribution_Moudle_Output_Total;	//所有模块输出总电流  整流器	 
+	 signed long slGenerator_L1L2L3_watts;		//发电机总功率
+	 float fGenerator_L1L2L3_current;		//发电机总电流	
+	 float faverage_module_voltage;			//电池平均电压	V	average module voltage  	.3f 	2Byte
+	 float ftotal_current;				//电池总电流	A	total current   		.2f	2Byte
+	 unsigned short     ucaverage_SOC;		//电池平均SOC	%	average SOC 			0	1Byte	
+	unsigned short	    b_gprs_work;		//gprs是否工作 1表示工作  0xff表示未配置，默认工作	   其他值表示不工作  不工作则设置成0
+	unsigned short	    b_wifi_work;		//wifi是否工作 1表示工作  0xff表示未配置，默认不工作   其他值表示不工作  不工作则设置成0 
+	unsigned short	    b_rj45_work;		//rj45是否工作 1表示工作  0xff表示未配置，默认不工作   其他值表示不工作  不工作则设置成0
+	unsigned short 	    b_TH_work;			//增加部分  bit 0控制  第1路温湿度    bit1控制第2路温湿度        bit4控制a/c  bit5控制fan
+	unsigned short      alarmDelyMinute;		//警报检测延时 单位Min 		最多255min即4个小时15min。  mppt 个数
+	unsigned short 	    device_ID;			//设备ID 占3个字节24位    最大 65535
+	unsigned short	    device_ID2;			//4个字节表示 4294967295  合计10个数字
+	unsigned short      plusengertim_last;		//pv>load电流最后一次持续的时间 	单位s
+	unsigned short      genengertim;		//发电机最后1次工作持续的时间			单位s
+	unsigned short      nolowtim_last;		//独立逻辑  发电机不工作的时候， 统计持续电量低时间。	单位s
+	unsigned short      yeshightim_last;		//独立逻辑  发电机工作的时候，   统计持续电量高时间。	单位s
+	unsigned short	    gen_flag;			//发电机最后进行开关状态  1=开机  0=关机
+	unsigned short	   oil_level;			//液位
+
+日报信息也上传
+
+核对每个数据
+
+
+一、MQTT上传的设备ID,0xE000-0xE07F,共128个
+1、设置
+2A 53 30 7C 00 7C 7C 00 81 7B 01 10 E0 00 00 3C 78 35 30 37 35 30 30 30 30 30 30 30 30 35 30 37 35 30 30 30 30 30 30 38 30 35 30 37 35 30 30 30 30 30 30 38 31 35 30 37 35 30 30 30 30 30 32 38 30 35 30 37 35 30 30 30 30 30 33 30 30 35 30 37 35 30 30 30 30 30 33 38 30 35 30 37 35 30 30 30 30 30 33 38 31 35 30 37 35 30 30 30 30 30 34 30 30 35 30 37 35 30 30 30 30 30 34 38 30 35 30 37 35 30 30 30 30 30 34 38 31 AE 8B 7D 23
+
+0  1  2  3  4  5  6  
+01 10 E0 00 00 3C 78 
+         1
+7  8  9  0  1  2  3  4  5  6  7  8  
+35 30 37 35 30 30 30 30 30 30 30 30 
+   2                             3
+9  0  1  2  3  4  5  6  7  8  9  0
+35 30 37 35 30 30 30 30 30 30 38 30 
+                           4
+1  2  3  4  5  6  7  8  9  0  1  2 
+35 30 37 35 30 30 30 30 30 30 38 31 
+                     5
+3  4  5  6  7  8  9  0  1  2  3  4
+35 30 37 35 30 30 30 30 30 32 38 30 
+  
+35 30 37 35 30 30 30 30 30 33 30 30 
+
+35 30 37 35 30 30 30 30 30 33 38 30 
+
+35 30 37 35 30 30 30 30 30 33 38 31 
+
+35 30 37 35 30 30 30 30 30 34 30 30 
+
+35 30 37 35 30 30 30 30 30 34 38 30 
+
+35 30 37 35 30 30 30 30 30 34 38 31 
+
+AE 8B
+2、读
+读上传的设备ID之前读一下MQTT上传设备总数，
+读上传的设备ID的寄存器数量算法：MQTT上传设备总数*12/2,
+例如MQTT上传设备总数=10，每一个ID=12位ASCII，总的字节数为120，每一个寄存器为2个字节，
+所以读上传的设备ID的寄存器数量=120/2=60=0x003C
+
+2A 53 30 7C 00 7C 7C 00 08 7B 01 03 E0 00 00 3C 72 1B 7D 23
+返回：
+01 03 78 35 30 37 35 30 30 30 30 30 30 30 30 35 30 37 35 30 30 30 30 30 30 38 30 35 30 37 35 30 30 30 30 30 30 38 31 35 30 37 35 30 30 30 30 30 32 38 30 35 30 37 35 30 30 30 30 30 33 30 30 35 30 37 35 30 30 30 30 30 33 38 30 35 30 37 35 30 30 30 30 30 33 38 31 35 30 37 35 30 30 30 30 30 34 30 30 35 30 37 35 30 30 30 30 30 34 38 30 35 30 37 35 30 30 30 30 30 34 38 31 CB 24 0D
+
+01 03 78 
+35 30 37 35 30 30 30 30 30 30 30 30 
+35 30 37 35 30 30 30 30 30 30 38 30 
+35 30 37 35 30 30 30 30 30 30 38 31 
+35 30 37 35 30 30 30 30 30 32 38 30 
+35 30 37 35 30 30 30 30 30 33 30 30 
+35 30 37 35 30 30 30 30 30 33 38 30 
+35 30 37 35 30 30 30 30 30 33 38 31 
+35 30 37 35 30 30 30 30 30 34 30 30 
+35 30 37 35 30 30 30 30 30 34 38 30 
+35 30 37 35 30 30 30 30 30 34 38 31 
+CB 24 
+
+
+二、读MQTT上传设备总数，0xE080
+2A 53 30 7C 00 7C 7C 00 08 7B 01 03 E0 80 00 01 B2 22 7D 23
+
+
+三、设置上传时间间隔，0xE081
+2A 53 30 7C 00 7C 7C 00 08 7B 01 06 E0 81 00 B4 EE 55 7D 23 //00B4=60*3
+2A 53 30 7C 00 7C 7C 00 08 7B 01 06 E0 81 00 78 EE 00 7D 23 //00B4=60*2
+
+四、设置心跳时间间隔,0xE082
+2A 53 30 7C 00 7C 7C 00 08 7B 01 06 E0 82 00 78 1E 00 7D 23 //00B4=60*2
+2A 53 30 7C 00 7C 7C 00 08 7B 01 06 E0 82 00 3C 33 1E 7D 23 //00B4=60*1
+
+2A 53 30 7C 00 7C 7C 00 08 7B 01 03 00 20 00 01 85 C0 7D 23
+
+
